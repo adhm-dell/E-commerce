@@ -31,31 +31,39 @@ class BrandResource extends Resource
     {
         return $form
             ->schema([
-                Section::make([
-                    Grid::make()
-                        ->schema([
-                            TextInput::make('name')
-                                ->required()
-                                ->maxLength(255)
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(
-                                    fn($state, Set $set) =>
-                                    $set('slug', Str::slug($state))
-                                ),
-                            TextInput::make('slug')
-                                ->required()
-                                ->disabled()
-                                ->dehydrated()
-                                ->unique(Category::class, 'slug', ignoreRecord: true)
-                                ->maxLength(255),
-                        ]),
-                    FileUpload::make('image')
-                        ->image()
-                        ->directory('categories'),
-                    Toggle::make('is_active')
-                        ->required()
-                        ->default(true),
-                ])
+                Section::make()
+                    ->schema([
+                        Grid::make()
+                            ->schema([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(
+                                        fn($state, Set $set) =>
+                                        $set('slug', Str::slug($state))
+                                    ),
+                                TextInput::make('slug')
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->unique(Brand::class, 'slug', ignoreRecord: true)
+                                    ->maxLength(255),
+                            ]),
+                        FileUpload::make('image')
+                            ->image()
+                            ->directory('brands')
+                            ->visibility('public')
+                            ->acceptedFileTypes(['image/*'])
+                            ->maxSize(10240),
+                        Toggle::make('is_active')
+                            ->required()
+                            ->default(true)
+                            ->inline(false)
+                            ->onColor('success')
+                            ->offColor('danger'),
+                    ])
+                    ->columns(2)
             ]);
     }
 
@@ -64,12 +72,17 @@ class BrandResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('slug')
-                    ->searchable(),
-                Tables\Columns\ImageColumn::make('image'),
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\ImageColumn::make('image')
+                    ->square()
+                    ->defaultImageUrl(url('/images/placeholder.png')),
                 Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -93,7 +106,8 @@ class BrandResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
